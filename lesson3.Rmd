@@ -1,0 +1,383 @@
+---
+title: "lesson3"
+output: html_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## reading in data
+```{r}
+getwd()
+list.files('lesson3')
+pf <- read.csv('lesson3/pseudo_facebook.tsv', sep='\t')
+```
+
+## Histograms of users birth days using ggplot
+```{r}
+str(pf)
+names(pf)
+
+library(ggplot2)
+qplot(x=dob_day, data=pf) +
+  geom_histogram() +
+  scale_x_discrete(breaks = 1:31) +
+  facet_wrap(~dob_month, ncol=3)
+```
+
+---
+Using Colors with ggplot2
+---
+install.packages('ggthemes', dependencies = TRUE) 
+library(ggthemes) 
+
+The ggthemes package was developed by Jeffery Arnold. Check out examples of the themes on the github page. 
+
+Chris is using theme_minimal()with the font size set to 24, which is why his output might look slightly different than yours. You can set the same theme in R by running the following code, or you can set the theme to a choice of your own. 
+theme_set(theme_minimal(24)) 
+
+
+Instead of using the qplot() function, you can also use the ggplot() function to create the histogram: 
+ggplot(aes(x = dob_day), data = pf) + 
+  geom_histogram() + 
+  scale_x_discrete(breaks = 1:31)
+  
+---
+Top-Coded see wikipedai
+---
+A top-coded data set is one for which the value of variables above an upper bound are censored. This is often done to preserve the anonymity of people participating in the survey.
+
+## Freind Counts
+```{r}
+str(pf)
+names(pf)
+
+library(ggplot2)
+qplot(x=friend_count, data=pf) +
+  geom_histogram() 
+
+```
+
+## Friend Counts less than 1000, since we have many people less than 1000
+## friedns and we need the histogram to spread these points out
+```{r}
+
+ggplot(aes(x = friend_count), data = pf, binwidth=25) + 
+  geom_histogram() + 
+  scale_x_continuous(limits = c(0, 1000), breaks =seq(0,1000,50)) +
+  facet_wrap(~gender)
+  
+```
+
+
+## Omit gender NA
+```{r}
+
+ggplot(aes(x = friend_count), data = subset(pf,!is.na(gender)), binwidth=25) + 
+  geom_histogram() + 
+  scale_x_continuous(limits = c(0, 1000), breaks =seq(0,1000,50)) +
+  facet_wrap(~gender)
+  
+```
+
+## statistics by gender 
+```{r}
+
+table(pf$gender)
+by(pf$friend_count, pf$gender, summary)
+  
+```
+
+
+## tenure
+```{r}
+
+ggplot(aes(x = tenure), data = pf) + 
+   geom_histogram(binwidth = 30, color = 'black', fill = '#099DD9')
+
+```
+
+The parameter color determines the color outline of objects in a plot. 
+
+The parameter fill determines the color of the area inside objects in a plot. 
+
+You might notice how the color black and the hex code color of #099DD9 (a shade of blue) are wrapped inside of I(). The I() functions stand for 'as is' and tells qplot to use them as colors. 
+
+Learn more about what you can adjust in a plot by reading the ggplot theme documentation 
+https://www.udacity.com/course/viewer#!/c-ud651-nd/l-755618712/e-814098627/m-814098628
+
+## tenure by year
+```{r}
+
+
+ggplot(aes(x = tenure/365), data = pf) + 
+   geom_histogram(binwidth = 1, color = 'black', fill = '#099DD9')+
+   scale_x_continuous(limits = c(0, 20), breaks =seq(0,20,1)) 
+
+ggplot(aes(x = tenure/365), data = pf, xlab = 'test', ylab='y') + 
+   geom_histogram(binwidth = 0.25, color = 'black', fill = '#099DD9') +
+   scale_x_continuous(limits = c(0, 7), breaks =seq(0,7)) 
+
+```
+
+## Axis Labeles
+```{r}
+
+ggplot(aes(x = tenure / 365), data = pf) + 
+  geom_histogram(color = 'black', fill = '#F79420') + 
+  scale_x_continuous(breaks = seq(1, 7, 1), limits = c(0, 7)) + 
+  xlab('Number of years using Facebook') + 
+  ylab('Number of users in sample')
+  
+```
+
+## Age
+```{r}
+summary(pf$age)
+
+ggplot(aes(x = age), data = pf) + 
+  geom_histogram(binwidth=1,color = 'black', fill = '#333333') + 
+  scale_x_continuous(breaks = seq(0, 113, 5), limits = c(0, 113)) + 
+  xlab('Age') + 
+  ylab('Number of users in sample')
+  
+```
+
+## Transforming Data 
+```{r}
+summary(pf$friend_count)
+
+# some have 0 friend_count so we get - infinity because log10(0) is undefined
+summary(log10(pf$friend_count))
+
+summary(log10(pf$friend_count+1))
+
+summary(sqrt(pf$friend_count))
+
+install.packages('gridExtra') 
+library(gridExtra)
+
+p1 <- ggplot(aes(x = friend_count), data = pf) + 
+  geom_histogram(color = 'black', fill = '#333333') 
+
+p2 <- p1 + scale_x_log10("log10")
+
+p3 <- p1 + scale_x_sqrt('scale_y_sqrt')
+
+
+grid.arrange(p1,p2,p3)
+
+```
+
+
+## Alternate Transforming Data 
+```{r}
+
+p1 <- qplot(x = friend_count, data=pf)
+p2 <- qplot(x = log10(friend_count), data=pf)
+p3 <- qplot(x = sqrt(friend_count), data=pf)
+
+grid.arrange(p1,p2,p3)
+
+```
+Multiple Plots in one Graph
+http://lightonphiri.org/blog/ggplot2-multiple-plots-in-one-graph-using-gridextra
+
+Add Log or Sqrt Scales to Axis
+http://docs.ggplot2.org/current/scale_continuous.html
+
+Assumptions of Linear Regression
+http://en.wikipedia.org/wiki/Linear_regression#Assumptions
+
+Normal Distribution
+http://en.wikipedia.org/wiki/Normal_distribution
+
+
+## Adding a Scaling Layer
+```{r}
+
+logscale <- qplot(x=log10(friend_count), data = pf)
+
+countscale <- ggplot(aes(x = friend_count), data = pf) + 
+  geom_histogram(color = 'black', fill = '#333333') + 
+  scale_x_log10("log10")
+
+grid.arrange(logscale, countscale, ncol=2)
+
+```
+
+## Frequency Polygon
+```{r}
+
+qplot(x = friend_count, data = subset(pf, !is.na(gender)), 
+      binwidth=10, geom="freqpoly", color=gender) +
+  scale_x_continuous(lim=c(0,1000), breaks = seq(0,1000,50))
+
+ggplot(aes(x = friend_count, y = ..count../sum(..count..)), data = subset(pf, !is.na(gender))) +
+  geom_freqpoly(aes(color = gender)) + 
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 50)) +
+  xlab('Friend Count') + 
+  ylab('Percentage of users with that friend count')
+
+
+
+```
+
+## Frequency Polygon before we had histograms
+```{r}
+
+qplot(x = friend_count,y = ..count../sum(..count..), 
+      data = subset(pf, !is.na(gender)), 
+      xlab = 'Friend Count',
+      ylab = 'Proportion of users with that friend count',
+      binwidth=10, geom="freqpoly", color=gender) +
+  scale_x_continuous(lim=c(0,1000), breaks = seq(0,1000,50))
+
+ggplot(aes(x = friend_count, y = ..count../sum(..count..)), 
+  data = subset(pf, !is.na(gender))) +
+  geom_freqpoly(aes(color = gender)) + 
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 50)) +
+  xlab('Friend Count') + 
+  ylab('Percentage of users with that friend count')
+
+
+
+```
+
+
+## Frequency Polygon before we had histograms, where do women over take men in the tail
+```{r}
+
+ggplot(aes(x = friend_count, y = ..count../sum(..count..)), 
+  data = subset(pf, !is.na(gender))) +
+  geom_freqpoly(aes(color = gender)) + 
+  scale_x_continuous(limits = c(700, 1000), breaks = seq(700, 1000, 50)) +
+  xlab('Friend Count') + 
+  ylab('Percentage of users with that friend count')
+
+
+
+```
+
+
+## Which gender makes more likes www_likes - females
+```{r}
+
+ggplot(aes(x = www_likes, y = ..count../sum(..count..)), 
+  data = subset(pf, !is.na(gender))) +
+  geom_freqpoly(aes(color = gender)) + 
+  scale_x_log10()
+  xlab('Likes Count') + 
+  ylab('Percentage of users with that likes count')
+
+```
+
+## Which gener has more likes on the web
+
+```{r}
+summary(pf$www_likes)
+by(pf$www_likes, pf$gender, sum)
+
+```
+
+## Histograms
+```{r}
+qplot(x=friend_count, data = subset(pf,!is.na(gender)),
+      binwidth=25)+
+      scale_x_continuous(limits = c(1,1000), breaks = seq(0,1000,50)) +
+      facet_wrap(~gender)
+
+
+```
+## BoxPlots
+```{r}
+qplot( x = gender, y = friend_count, 
+      data = subset(pf,!is.na(gender)),
+      geom='boxplot')
+
+
+```
+
+## how to read boxplots
+How to read and use a Boxplot 
+http://flowingdata.com/2008/02/15/how-to-read-and-use-a-box-and-whisker-plot/
+
+The interquartile range or IQR includes all of the values between the bottom and top of the boxes in the boxplot. 
+http://en.wikipedia.org/wiki/Interquartile_range
+
+Visualization of the IQR with a normal probability distribution function with $\mu=1$μ=1 and $\sigma^2=1$σ2=1 (pdf). 
+http://en.wikipedia.org/wiki/File:Boxplot_vs_PDF.svg
+
+Intro to Descriptive Statistics Exercise: Match Box Plots
+https://www.udacity.com/course/viewer#!/c-ud827/l-1471748603/e-83417918/m-83664035
+
+## BoxPlots Altered to for users between 0 and 1000
+```{r}
+qplot( x = gender, y = friend_count, 
+      data = subset(pf,!is.na(gender)),
+      geom='boxplot') +
+      coord_cartesian(ylim = c(0, 1000))
+      #coord_cartesian(ylim = range(boxplot(pf$friend_count, plot=FALSE)$stats)*c(.9, 1.1))
+
+qplot( x = gender, y = friend_count, 
+      data = subset(pf,!is.na(gender)),
+      geom='boxplot', ylim = c(0,1000))
+
+qplot( x = gender, y = friend_count, 
+      data = subset(pf,!is.na(gender)),
+      geom='boxplot') +
+      scale_y_continuous(limits= c(0,1000))
+
+
+```
+
+
+## BoxPlots Quartiles and Friend COunts
+```{r}
+qplot( x = gender, y = friend_count, 
+      data = subset(pf,!is.na(gender)),
+      geom='boxplot') +
+      coord_cartesian(ylim = c(0, 250))
+     
+by(pf$friend_count, pf$gender, sum)
+by(pf$friend_count, pf$gender, summary)
+
+
+```
+
+## On average who initiated more friendships in our sample?
+Men or Women
+```{r}
+qplot( x = gender, y = friendships_initiated, 
+      data = subset(pf,!is.na(gender)),
+      geom='boxplot') +
+      coord_cartesian(ylim = c(0, 250))
+      
+by(pf$friendships_initiated, pf$gender, sum)
+by(pf$friendships_initiated, pf$gender, summary)
+
+```
+
+## getting logical
+you might want to convert a set of variables to zero because
+we don't care anout the count, we care if it was just used
+and we have lots of zeros... so we convert to binary form
+```{r}
+summary(pf$mobile_likes)
+
+summary(pf$mobile_likes>0)
+
+# create new var, and assign default with NA
+check_in <- NA
+pf$check_in <- ifelse(pf$mobile_likes > 0,1,0)
+pf$check_in <- factor(pf$check_in)
+summary(pf$check_in)
+
+```
+
+# What percent of check_in are mobile
+```{r}
+
+sum(pf$check_in ==1)/length(pf$check_in)
+
+```
